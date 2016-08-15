@@ -1,0 +1,497 @@
+Server port assigned is =6656
+Request about to be placed
+Inside first if 
+numberCS 0
+Inside number CS 0 
+Elapsed time 223
+Entering critical section
+Exiting
+Critical Sections till now 1
+Request about to be placed
+Inside first if 
+numberCS 1
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 186
+Entering critical section
+Exiting
+Critical Sections till now 2
+Request about to be placed
+Inside first if 
+numberCS 2
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 185
+Entering critical section
+Exiting
+Critical Sections till now 3
+Request about to be placed
+Inside first if 
+numberCS 3
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 186
+Entering critical section
+Exiting
+Critical Sections till now 4
+Request about to be placed
+Inside first if 
+numberCS 4
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 187
+Entering critical section
+Exiting
+Critical Sections till now 5
+Request about to be placed
+Inside first if 
+numberCS 5
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 188
+Entering critical section
+Exiting
+Critical Sections till now 6
+Request about to be placed
+Inside first if 
+numberCS 6
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 187
+Entering critical section
+Exiting
+Critical Sections till now 7
+Request about to be placed
+Inside first if 
+numberCS 7
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 188
+Entering critical section
+Exiting
+Critical Sections till now 8
+Request about to be placed
+Inside first if 
+numberCS 8
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 187
+Entering critical section
+Exiting
+Critical Sections till now 9
+Request about to be placed
+Inside first if 
+numberCS 9
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 187
+Entering critical section
+Exiting
+Critical Sections till now 10
+Request about to be placed
+Inside first if 
+numberCS 10
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 191
+Entering critical section
+Exiting
+Critical Sections till now 11
+Request about to be placed
+Inside first if 
+numberCS 11
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 187
+Entering critical section
+Exiting
+Critical Sections till now 12
+Request about to be placed
+Inside first if 
+numberCS 12
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 186
+Entering critical section
+Exiting
+Critical Sections till now 13
+Request about to be placed
+Inside first if 
+numberCS 13
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 189
+Entering critical section
+Exiting
+Critical Sections till now 14
+Request about to be placed
+Inside first if 
+numberCS 14
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 189
+Entering critical section
+Exiting
+Critical Sections till now 15
+Request about to be placed
+Inside first if 
+numberCS 15
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 185
+Entering critical section
+Exiting
+Critical Sections till now 16
+Request about to be placed
+Inside first if 
+numberCS 16
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 187
+Entering critical section
+Exiting
+Critical Sections till now 17
+Request about to be placed
+Inside first if 
+numberCS 17
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 185
+Entering critical section
+Exiting
+Critical Sections till now 18
+Request about to be placed
+Inside first if 
+numberCS 18
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 186
+Entering critical section
+Exiting
+Critical Sections till now 19
+Request about to be placed
+Inside first if 
+numberCS 19
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Sending req to 09
+Elapsed time 165
+Entering critical section
+Exiting
+Critical Sections till now 20
+Request about to be placed
+Inside first if 
+numberCS 20
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 157
+Entering critical section
+Exiting
+Critical Sections till now 21
+Request about to be placed
+Inside first if 
+numberCS 21
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 170
+Entering critical section
+Exiting
+Critical Sections till now 22
+Request about to be placed
+Inside first if 
+numberCS 22
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 159
+Entering critical section
+Exiting
+Critical Sections till now 23
+Request about to be placed
+Inside first if 
+numberCS 23
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 160
+Entering critical section
+Exiting
+Critical Sections till now 24
+Request about to be placed
+Inside first if 
+numberCS 24
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 168
+Entering critical section
+Exiting
+Critical Sections till now 25
+Request about to be placed
+Inside first if 
+numberCS 25
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 161
+Entering critical section
+Exiting
+Critical Sections till now 26
+Request about to be placed
+Inside first if 
+numberCS 26
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 161
+Entering critical section
+Exiting
+Critical Sections till now 27
+Request about to be placed
+Inside first if 
+numberCS 27
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 163
+Entering critical section
+Exiting
+Critical Sections till now 28
+Request about to be placed
+Inside first if 
+numberCS 28
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 162
+Entering critical section
+Exiting
+Critical Sections till now 29
+Request about to be placed
+Inside first if 
+numberCS 29
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 163
+Entering critical section
+Exiting
+Critical Sections till now 30
+Request about to be placed
+Inside first if 
+numberCS 30
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 172
+Entering critical section
+Exiting
+Critical Sections till now 31
+Request about to be placed
+Inside first if 
+numberCS 31
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 156
+Entering critical section
+Exiting
+Critical Sections till now 32
+Request about to be placed
+Inside first if 
+numberCS 32
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 162
+Entering critical section
+Exiting
+Critical Sections till now 33
+Request about to be placed
+Inside first if 
+numberCS 33
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 157
+Entering critical section
+Exiting
+Critical Sections till now 34
+Request about to be placed
+Inside first if 
+numberCS 34
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 169
+Entering critical section
+Exiting
+Critical Sections till now 35
+Request about to be placed
+Inside first if 
+numberCS 35
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 167
+Entering critical section
+Exiting
+Critical Sections till now 36
+Request about to be placed
+Inside first if 
+numberCS 36
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 158
+Entering critical section
+Exiting
+Critical Sections till now 37
+Request about to be placed
+Inside first if 
+numberCS 37
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 160
+Entering critical section
+Exiting
+Critical Sections till now 38
+Request about to be placed
+Inside first if 
+numberCS 38
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 159
+Entering critical section
+Exiting
+Critical Sections till now 39
+Request about to be placed
+Inside first if 
+numberCS 39
+Sending req to 05
+Sending req to 04
+Sending req to 03
+Sending req to 02
+Sending req to 01
+Elapsed time 159
+Entering critical section
+Exiting
+Critical Sections till now 40
+Request about to be placed
