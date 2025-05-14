@@ -8,7 +8,7 @@ public class socClient extends Thread {
     public static String machId;
     //ArrayList to store machine name and port numbers in a single String
     public static ArrayList<String> l1 = new ArrayList<String>();
-    public static long reqTimeStamp = 0;
+    public static long requestTimeStamp = 0;
 
 
     public void run() {
@@ -55,7 +55,7 @@ public class socClient extends Thread {
             }
 
             socServer.isReq = true;
-            reqTimeStamp = new Date().getTime();
+            requestTimeStamp = new Date().getTime();
             System.out.println("numberCS " + socServer.numberCS);
 
 
@@ -66,7 +66,7 @@ public class socClient extends Thread {
                     String svrNameLocal = c[0];
                     String machineId = svrNameLocal.substring(2, 4);
                     if (!machId.equals(machineId)) {
-                        socReqMsgConn(c[0], Integer.parseInt(c[1]), reqTimeStamp);
+                        socReqMsgConn(c[0], Integer.parseInt(c[1]), requestTimeStamp);
                     }
                 }
             } else {
@@ -78,7 +78,7 @@ public class socClient extends Thread {
                 if (socServer.activeCount == 0) {
                     socServer.inCS = true;
                     long currentTm = new Date().getTime();
-                    long latency = currentTm - reqTimeStamp;
+                    long latency = currentTm - requestTimeStamp;
                     System.out.println("Elapsed time: " + latency);
                     System.out.println("Entered :" + new Date());
 
@@ -264,7 +264,7 @@ public class socClient extends Thread {
             OutputStream opS = soClient.getOutputStream();
             ObjectOutputStream oOS = new ObjectOutputStream(opS);
             msg m2 = new msg();
-            m2.settimeStmp(reqTimeStamp);
+            m2.settimeStmp(requestTimeStamp);
             m2.setfromSvr(machId);
             m2.setmsgVal("Req");
             oOS.writeObject(m2);
