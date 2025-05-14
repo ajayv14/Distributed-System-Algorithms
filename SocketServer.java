@@ -5,10 +5,9 @@ import java.io.*;
 
 public class SocketServer extends Thread {
 
-    private ServerSocket serverSocket;
+    private ServerSocket serverSocket; 
 
-    public static int serverTimeStamp = 0; // Time stamp of server
-    public static int connectionCount = 0; // Number of client connections established to the server
+
     public static int maxConn; // Max number of clients that are to be connected
     public static int numberOfSystems = 0;
 
@@ -18,17 +17,19 @@ public class SocketServer extends Thread {
 
     public static Queue<Message> requestQueue = new LinkedList<>();
 
-    public static ArrayList<String> currentlyRequestingNodes = new ArrayList<>();
-    public static ArrayList<String> localArray = new ArrayList<>();
 
     public static boolean inCriticalSection = false;
-    public static boolean isRequest = false;
+    public static boolean isRequested = false;
 
     public static int numberCS = 0;
+
     public static int replies = 0;
     public static int activeCount = 0;
 
-    public SocketServer(int portNum) throws IOException {
+    
+    public SocketServer(int portNum, int maxConnections) throws IOException {
+
+        maxConn = maxConnections;
 
         serverSocket = new ServerSocket(portNum);
         serverSocket.setSoTimeout(100000);
@@ -36,6 +37,7 @@ public class SocketServer extends Thread {
 
     public void run() {
 
+        
         while (true) {
 
             try {
@@ -45,9 +47,7 @@ public class SocketServer extends Thread {
                 ObjectInputStream inputStream = new ObjectInputStream(server.getInputStream());
 
                 Message message = (Message) inputStream.readObject();
-
-              
-
+             
 
                 // Establish connection
                 if ("Connection".equals(message.getMessage())) {
@@ -61,7 +61,7 @@ public class SocketServer extends Thread {
 
                     if (isAllClientsConnected && !flag) {
                        
-                        socClient.socReqMsg();
+                        SocketClient.socReqMsg();
                         flag = true;                        
                     }
                 
@@ -71,36 +71,35 @@ public class SocketServer extends Thread {
                 //Request Message
                 else if ("Request".equals(message.getMessage())) {
 
-                    long messageTimeStamp = message.getTimeStamp();
-                    long currentTimeStamp = socClient.requestTimeStamp;
+                    long messageTimeStamp = message.getTimeStamp(); // Timestamp from the message received
+                    long machineTimeStamp = SocketClient.requestTimeStamp; // Current node's timestamp.
                     
-                    int machineId = Integer.parseInt(socClient.machId);
-                    int fromMachineId = Integer.parseInt(message.getFromServer());
+                    int machineId = Integer.parseInt(SocketClient.machId);                    
+                    int messageMachineId = Integer.parseInt(message.getFromServer()); // Machine id of the message sender
 
                     boolean replyNow;
                     
                     synchronized (SocketServer.class) {
 
-                        replyNow = !isRequest 
+                        replyNow = !isRequested 
                                 || ( !inCriticalSection 
-                                        && ( messageTimeStamp < currentTimeStamp || messageTimeStamp == currentTimeStamp && fromMachineId < machineId ));
+                                        && ( messageTimeStamp < machineTimeStamp || ( messageTimeStamp == machineTimeStamp && messageMachineId < machineId )));
                     
 
                         if(!replyNow) {
                             requestQueue.add(message);                                                        
                             continue;
-                        }
-                       
+                        }                      
 
                     }
 
-                    socClient.reply(message.getFromServer());
+                    SocketClient.reply(message.getFromServer()); // Provide ack to sender approving access to CS
                     
                 }
 
-                // msg type 3-Reply message recieve 
-
-                else if ("Rep".equals(message.getMessage())) {
+                
+                // Reply message from sender providing ack/approval for enterning CS
+                else if ("Reply".equals(message.getMessage())) {
                     
                     synchronized (SocketServer.class) {
                         replies++;
@@ -124,103 +123,56 @@ public class SocketServer extends Thread {
 
     public static synchronized void enterCriticalSectionIfPossible() {
 
-        if ((numberCS == 0 && replies == numberOfSystems - 1) || replies == activeCount) {
-
+       if (replies == numberOfSystems - 1 && isRequested && !inCriticalSection) {
+            
             inCriticalSection = true;
-
-            long latency = new Date().getTime() - socClient.requestTimeStamp;
-
-            System.out.println("Elapsed time " + latency);
-            System.out.println("Entering critical section");
-
-            try {
-                Thread.sleep(30);
-            } catch (InterruptedException ie) {
-
-            }
-            System.out.println("Exiting");
-
+           
+            criticalSection();
+                           
             inCriticalSection = false;
-            isRequest = false;
-
+                        
+            isRequested = false;
+            
             replies = 0;
+            
             numberCS++;
 
-            socClient.replyToAll();
-            System.out.println("Critical Sections till now " + numberCS);
-            socClient.socReqMsg();
-            // System.out.println("New request order issued to socReqMsg");
-        }
+            // Reply to deferred messages
+            while (!requestQueue.isEmpty()) {
 
-    }
-
-    // read text file and get corresponding port numbers
-    public static int readFile(String pathName) {
-
-        String lineTxt = null;
-        int svrPort = 0;
-        int cnN = 0;
-
-        try {
-
-            // Read text file contents
-            FileReader fR = new FileReader(pathName);
-            // Wrapper
-            BufferedReader bufferedReader = new BufferedReader(fR);
-
-            while ((lineTxt = bufferedReader.readLine()) != null) {
-
-                // System.out.println("Read Server name"+lineTxt);
-
-                String[] svr = lineTxt.split("-");
-
-                if (svr[0].equals(java.net.InetAddress.getLocalHost().getHostName())) {
-
-                    svrPort = Integer.parseInt(svr[1]);
-
-                }
-
-                // fill maxConn value to find number of clients to be connected
-
-                cnN = Integer.parseInt(svr[0].substring(2, 4));
-
-                if (cnN > maxConn) {
-                    maxConn = cnN;
-                }
+                Message deferredMessage = requestQueue.poll();
+                SocketClient.reply(deferredMessage.getFromServer());
             }
 
-            numberOfSystems = maxConn;
-            // maxConn =
-            // maxConn-Integer.parseInt(java.net.InetAddress.getLocalHost().getHostName().substring(2,4));
-            // System.out.println("Total numre of machines :" + maxConn);
-            // close file
-            bufferedReader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            SocketClient.socReqMsg();
+
+            System.out.println("Critical Section count so far: " + numberCS);
         }
-        System.out.println("Server port assigned is =" + svrPort);
-        return svrPort;
+
     }
 
-    public static void main(String[] args) {
 
-        int port = 0;
+    // Simulated critical section
+    private static void criticalSection() {
 
-        // get portnumber based on localhostname
+        long latency = new Date().getTime() - SocketClient.requestTimeStamp;
 
-        port = readFile("../aos/serverData.txt");
+        System.out.println("Elapsed time: " + latency + " ms");
+        System.out.println("Entering Critical Section");
 
         try {
-            Thread t = new SocketServer(port);
-            t.start();
+            Thread.sleep(30);
+        } catch (InterruptedException ignored) {}
 
-            Thread t2 = new socClient();
-            t2.start();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        System.out.println("Exiting Critical Section");
     }
+
+
+  
+
+
+    
+
+
 
 }
