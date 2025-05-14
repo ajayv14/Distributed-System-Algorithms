@@ -88,7 +88,7 @@ public class SocketServer extends Thread {
 
                         if(!replyNow) {
                             requestQueue.add(message);                                                        
-                            break;
+                            continue;
                         }
                        
 

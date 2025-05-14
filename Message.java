@@ -6,7 +6,7 @@ public class Message implements Serializable {
     private String fromServer;
     private String messageString;
 
-    public void message(long tStamp, String frmServer, String msgString) {
+    public Message(long tStamp, String frmServer, String msgString) {
 
         timeStamp = tStamp;
         fromServer = frmServer;
@@ -26,6 +26,9 @@ public class Message implements Serializable {
     public String getFromServer(){
         return fromServer;
     }
+
+
+
 
    
 

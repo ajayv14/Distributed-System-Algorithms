@@ -1,9 +1,4 @@
-dc09.utdallas.edu-6626
-dc08.utdallas.edu-6636
-dc07.utdallas.edu-6646
-dc06.utdallas.edu-6656
-dc05.utdallas.edu-6666
-dc04.utdallas.edu-6676
-dc03.utdallas.edu-6686
-dc02.utdallas.edu-6696
-dc01.utdallas.edu-6698
+node01-8001
+node02-8002
+node03-8003
+node04-8004
