@@ -6,9 +6,6 @@ public class SocketClient extends Thread {
 
     // ArrayList to store machine name and port numbers in a single String
     public static Map<String, Integer> serverMap = new HashMap<>();
-    
-    // List to store server information from file
-    private static List<String> serverList = new ArrayList<>();
 
     public static long requestTimeStamp = 0;
    
@@ -39,7 +36,7 @@ public class SocketClient extends Thread {
     // Send CONNECTION message
     public static void connectToServer(String server, int port) {
         try {
-            Socket client = new Socket(server, port);
+            Socket client = new Socket("localhost", port);
            
             // DataStreams
             OutputStream outToServer = client.getOutputStream();
@@ -51,21 +48,17 @@ public class SocketClient extends Thread {
             client.close();
 
         } catch (IOException e) {
-            System.out.println("Failed to connect to server : " + server);
+            System.out.println("Failed to connect to server : " + server + " on port " + port);
             e.printStackTrace();
         }
     }
 
-
-
-
     // Read ArrayList and find servers to be pinged with REQ msg
     public static void socReqMsg() {
-       
-       
         System.out.println("Request about to be placed");
         
-        if (SocketServer.numberCS < 40) {
+        if (SocketServer.numberCS < 40) 
+        {
             try {
                 Thread.sleep(150);
             } catch (InterruptedException ie) {
@@ -73,23 +66,22 @@ public class SocketClient extends Thread {
             }
 
             SocketServer.isRequested = true;
+            
             requestTimeStamp = new Date().getTime();
+            
             System.out.println("numberCS " + SocketServer.numberCS);
 
             if (SocketServer.numberCS == 0) {
               
                 System.out.println("Inside number CS 0 ");
-               
-               
-                for (String itm : serverList) {
-                    String[] c = itm.split("-");
-                    String svrNameLocal = c[0];
-                    String machineId = svrNameLocal.substring(4); // Extract ID from nodeXX
-                    
-                    if (!machId.equals(machineId)) {
-                        sendRequestMsg(c[0], Integer.parseInt(c[1]), requestTimeStamp);
-                    }
 
+                for(String server : serverMap.keySet()){
+                    
+                    String machineId = server.substring(4); // Extract ID from nodeXX
+
+                    if (!machId.equals(machineId)) {
+                        sendRequestMsg(server, serverMap.get(server), requestTimeStamp);
+                    }
                 }
             } else {
                 
@@ -116,7 +108,6 @@ public class SocketClient extends Thread {
                     SocketServer.replies = 0;
                     System.out.println("Critical Sections till now " + SocketServer.numberCS);
                    
-                   
                     replyToAll();
                                      
                     socReqMsg();
@@ -135,7 +126,7 @@ public class SocketClient extends Thread {
     // Socket to send request message
     public static void sendRequestMsg(String server, int port, long reqTimeStamp) {
         try {
-            Socket clientMsg = new Socket(server, port);
+            Socket clientMsg = new Socket("localhost", port);
 
             // DataStreams
             OutputStream ost = clientMsg.getOutputStream();
@@ -146,22 +137,20 @@ public class SocketClient extends Thread {
             clientMsg.close();
             // Each process should only place one request at a time
         } catch (IOException e) {
+            System.out.println("Failed to send request to server on port " + port);
             e.printStackTrace();
         }
     }
 
     public static void readFile(String pathName) {
-        String lineTxt = null;
+        String line = null;
       
         try {
             FileReader fR = new FileReader(pathName);           
             BufferedReader bufferedReader = new BufferedReader(fR);
 
-            while ((lineTxt = bufferedReader.readLine()) != null) {
-                // Store server info in list for later use
-                serverList.add(lineTxt);
-                              
-                String[] serverInfo = lineTxt.split("-");                
+            while ((line = bufferedReader.readLine()) != null) {
+                String[] serverInfo = line.split("-");                
                 serverMap.put(serverInfo[0], Integer.parseInt(serverInfo[1]));
 
                 // Check if this is our node based on hostname
@@ -180,7 +169,7 @@ public class SocketClient extends Thread {
             }
             
             // Set number of systems for SocketServer
-            SocketServer.numberOfSystems = serverList.size();
+            SocketServer.numberOfSystems = serverMap.size();
             
             // Close the file
             bufferedReader.close();
@@ -195,6 +184,7 @@ public class SocketClient extends Thread {
         
         for (int i = 0; i < size; i++) {
             Message m = SocketServer.requestQueue.poll();
+            
             if (m != null) {
                 sendReply(m.getFromServer());
             }
@@ -204,15 +194,10 @@ public class SocketClient extends Thread {
     // Reply message to any REQUEST received
     public static void sendReply(String sysNum) {
         String nodeName = "node" + sysNum;
-        
         Integer port = serverMap.get(nodeName);
-        if (port == null) {
-            System.out.println("Error: No port found for node " + nodeName);
-            return;
-        }
-
+              
         try {
-            Socket soClient = new Socket(nodeName, port);
+            Socket soClient = new Socket("localhost", port);
             
             OutputStream opS = soClient.getOutputStream();
             ObjectOutputStream oOS = new ObjectOutputStream(opS);
@@ -224,21 +209,17 @@ public class SocketClient extends Thread {
             soClient.close();
 
         } catch (IOException e) {
+            System.out.println("Failed to send reply to node " + nodeName + " on port " + port);
             e.printStackTrace();
         }
     }
 
     public static void sendRequest(String sysNum) {
         String server = "node" + sysNum;
-
         Integer port = serverMap.get(server);
-        if (port == null) {
-            System.out.println("Error: No port found for server " + server);
-            return;
-        }
-        
+       
         try {
-            Socket soClient = new Socket(server, port);
+            Socket soClient = new Socket("localhost", port);
             // DataStreams
             OutputStream opS = soClient.getOutputStream();
             ObjectOutputStream oOS = new ObjectOutputStream(opS);
@@ -249,6 +230,7 @@ public class SocketClient extends Thread {
             oOS.flush();
             soClient.close();
         } catch (IOException e) {
+            System.out.println("Failed to send request to server " + server + " on port " + port);
             e.printStackTrace();
         }
     }
