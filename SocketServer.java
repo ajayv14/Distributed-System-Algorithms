@@ -50,7 +50,7 @@ public class SocketServer extends Thread {
              
 
                 // Establish connection
-                if ("Connection".equals(message.getMessage())) {
+                if ("CONNECTION".equals(message.getMessage())) {
                      
                     maxConn--;
 
@@ -93,7 +93,7 @@ public class SocketServer extends Thread {
 
                     }
 
-                    SocketClient.reply(message.getFromServer()); // Provide ack to sender approving access to CS
+                    SocketClient.sendReply(message.getFromServer()); // Provide ack to sender approving access to CS
                     
                 }
 
@@ -141,7 +141,7 @@ public class SocketServer extends Thread {
             while (!requestQueue.isEmpty()) {
 
                 Message deferredMessage = requestQueue.poll();
-                SocketClient.reply(deferredMessage.getFromServer());
+                SocketClient.sendReply(deferredMessage.getFromServer());
             }
 
             SocketClient.socReqMsg();
