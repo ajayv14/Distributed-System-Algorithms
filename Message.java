@@ -27,6 +27,12 @@ public class Message implements Serializable {
         return fromServer;
     }
 
+    @Override
+    public String toString() {
+
+        return "Message [timeStamp=" + timeStamp + ", fromServer=" + fromServer + ", message=" + messageString + "]";
+    }
+
 
 
 

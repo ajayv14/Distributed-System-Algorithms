@@ -52,11 +52,15 @@ public class SocketServer extends Thread {
                 // Establish connection
                 if ("CONNECTION".equals(message.getMessage())) {
                      
+                    System.out.println("Connection request recieved from : " + message.getFromServer());
+
                     maxConn--;
 
                     //set all clients conn to true
-                    if (maxConn == 0) {
+                    if (maxConn <= 0) {
                         isAllClientsConnected = true;
+                        
+                        System.out.println("All clients connected");
                     }
 
                     if (isAllClientsConnected && !flag) {
@@ -64,12 +68,16 @@ public class SocketServer extends Thread {
                         SocketClient.socReqMsg();
                         flag = true;                        
                     }
+
+                    System.out.println("Updated max connections : " + maxConn);
                 
                 }               
 
 
                 //Request Message
-                else if ("Request".equals(message.getMessage())) {
+                else if ("REQUEST".equals(message.getMessage())) {
+
+                    System.out.println("Received REQUEST message : " + message.toString());
 
                     long messageTimeStamp = message.getTimeStamp(); // Timestamp from the message received
                     long machineTimeStamp = SocketClient.requestTimeStamp; // Current node's timestamp.
@@ -87,19 +95,21 @@ public class SocketServer extends Thread {
                     
 
                         if(!replyNow) {
+
+                            System.out.println("Request added to queue");
                             requestQueue.add(message);                                                        
                             continue;
                         }                      
 
                     }
-
+                    
                     SocketClient.sendReply(message.getFromServer()); // Provide ack to sender approving access to CS
                     
                 }
 
                 
                 // Reply message from sender providing ack/approval for enterning CS
-                else if ("Reply".equals(message.getMessage())) {
+                else if ("REPLY".equals(message.getMessage())) {
                     
                     synchronized (SocketServer.class) {
                         replies++;
@@ -161,7 +171,7 @@ public class SocketServer extends Thread {
         System.out.println("Entering Critical Section");
 
         try {
-            Thread.sleep(30);
+            Thread.sleep(10000);
         } catch (InterruptedException ignored) {}
 
         System.out.println("Exiting Critical Section");

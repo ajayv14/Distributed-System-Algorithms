@@ -27,30 +27,44 @@ public class SocketClient extends Thread {
                 e.printStackTrace();
             }
         }
+
+        System.out.println("hostname : " + hostname);
     }
 
     public void run() {
-        readFile("serverData.txt");
+
+        System.out.println("Inside run method");        
+        readFileAndPopulateServerMap("serverData.txt");
+        processServerMap(serverMap);
+
     }
 
-    // Send CONNECTION message
-    public static void connectToServer(String server, int port) {
-        try {
-            Socket client = new Socket(server, port);
-           
-            // DataStreams
-            OutputStream outToServer = client.getOutputStream();
-            ObjectOutputStream oSs = new ObjectOutputStream(outToServer);
+     
+     
+    private static void sendEventToServer(String server, int port, Message m){
 
-            Message m = new Message(new Date().getTime(), machId, "CONNECTION");
-    
-            oSs.writeObject(m);               
-            client.close();
+        System.out.println(String.format("Sending event to server %s , port %s, message %s ", server, port, m));
 
+        try(Socket client = new Socket("localhost", port);
+            
+            ObjectOutputStream outToServer = new ObjectOutputStream(client.getOutputStream());){                        
+
+            outToServer.writeObject(m);        
+            
         } catch (IOException e) {
             System.out.println("Failed to connect to server : " + server);
             e.printStackTrace();
         }
+    }
+
+
+
+    // Send CONNECTION message
+    public static void connectToServer(String server, int port) {
+      
+        Message m = new Message(new Date().getTime(), machId, "CONNECTION");
+
+        sendEventToServer(server, port, m);
     }
 
 
@@ -62,48 +76,35 @@ public class SocketClient extends Thread {
        
         System.out.println("Request about to be placed");
         
-        if (SocketServer.numberCS < 40) 
-        {
-            try {
-                Thread.sleep(150);
-            } catch (InterruptedException ie) {
+        
+        try {
+                Thread.sleep(6000);
+        } catch (InterruptedException ie) {
                 // Ignore interruption
-            }
+        }
 
-            SocketServer.isRequested = true;
+        SocketServer.isRequested = true;
             
-            requestTimeStamp = new Date().getTime();
+        requestTimeStamp = new Date().getTime();
             
-            System.out.println("numberCS " + SocketServer.numberCS);
+        System.out.println("numberCS " + SocketServer.numberCS);
 
-            if (SocketServer.numberCS == 0) {
-              
-                System.out.println("Inside number CS 0 ");
+ 
+                
+       // Check if there are any deferred requests
+       
+       if (SocketServer.requestQueue.isEmpty()) {
 
+            SocketServer.inCriticalSection = true;
 
-                for(String server : serverMap.keySet()){
+            long currentTm = new Date().getTime();
+            long latency = currentTm - requestTimeStamp;
                     
-                    String machineId = server.substring(4); // Extract ID from nodeXX
-
-                    if (!machId.equals(machineId)) {
-                        sendRequestMsg(server, serverMap.get(server), requestTimeStamp);
-                    }
-                }
-                              
-                
-            } else {
-                
-                // Check if there are any deferred requests
-                if (SocketServer.requestQueue.isEmpty()) {
-
-                    SocketServer.inCriticalSection = true;
-                    long currentTm = new Date().getTime();
-                    long latency = currentTm - requestTimeStamp;
-                    System.out.println("Elapsed time: " + latency);
-                    System.out.println("Entered :" + new Date());
+            System.out.println("Elapsed time: " + latency);
+            System.out.println("Entered :" + new Date());
 
                     try {
-                        Thread.sleep(30);
+                        Thread.sleep(5000);
                     } catch (InterruptedException ie) {
                         // Ignore interruption
                     }
@@ -111,6 +112,7 @@ public class SocketClient extends Thread {
                     System.out.println("Exiting");
                    
                     SocketServer.inCriticalSection = false;
+                    
                     SocketServer.isRequested = false;
                     SocketServer.numberCS++;
                     SocketServer.replies = 0;
@@ -118,82 +120,51 @@ public class SocketClient extends Thread {
                    
                    
                     replyToAll();
-                                     
-                    socReqMsg();
-                } else {
-                    // Send requests to all nodes that have deferred requests
-                    for (Message msg : SocketServer.requestQueue) {
+                               
+                                        
+                    //socReqMsg();
+
+        } else {
+
+             // Send requests to all nodes that have deferred requests
+               for (Message msg : SocketServer.requestQueue) {
                         String sysNum = msg.getFromServer();
                         System.out.println("Sending req to " + sysNum);
                         sendRequest(sysNum);
-                    }
-                }
-            }
+               }
         }
+          
     }
 
     // Socket to send request message
     public static void sendRequestMsg(String server, int port, long reqTimeStamp) {
-        try {
-            Socket clientMsg = new Socket(server, port);
-
-            // DataStreams
-            OutputStream ost = clientMsg.getOutputStream();
-            ObjectOutputStream oSsm = new ObjectOutputStream(ost);
-
-            Message m = new Message(reqTimeStamp, machId, "Request");                  
-            oSsm.writeObject(m);
-            clientMsg.close();
-            // Each process should only place one request at a time
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+                
+        Message m = new Message(reqTimeStamp, machId, "REQUEST");     
+        sendEventToServer("localhost", port, m);
     }
 
 
-
-    public static void readFile(String pathName) {
+    public static void sendRequest(String sysNum) {
        
-        String line = null;
-      
-        try {
-            FileReader fR = new FileReader(pathName);           
-            BufferedReader bufferedReader = new BufferedReader(fR);
+        String server = "node" + sysNum;
+        Integer port = serverMap.get(server);
+                
+        Message m = new Message(requestTimeStamp, machId, "REQUEST");   
 
-            while ((line = bufferedReader.readLine()) != null) {
-             
-                              
-                String[] serverInfo = line.split("-");                
-                serverMap.put(serverInfo[0], Integer.parseInt(serverInfo[1]));
-
-                // Check if this is our node based on hostname
-                if (serverInfo[0].equals(hostname)) {
-                    // This is our node
-                } else {
-                    // Connect to all servers with lower number in hostname
-                    int id = Integer.parseInt(serverInfo[0].substring(4)); 
-                    
-                    if (id < Integer.parseInt(machId)) {
-                        // Add port nos and machine ids map
-                        int port = Integer.parseInt(serverInfo[1]);
-                        connectToServer(serverInfo[0], port);                    
-                    }
-                }
-            }
-            
-            // Set number of systems for SocketServer
-            SocketServer.numberOfSystems = serverMap.size();
-            
-            // Close the file
-            bufferedReader.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        sendEventToServer("localhost", port, m);
     }
 
+     // Reply message to any REQUEST received
+    public static void sendReply(String sysNum) {
 
+        System.out.println("Sending REPLY to : " + sysNum);
+       
+        String server = "node" + sysNum;
+        Integer port = serverMap.get(server);      
+        Message m = new Message(new Date().getTime(), machId, "REPLY");  
 
+        sendEventToServer("localhost", port, m);        
+    }
 
 
     public static void replyToAll() {
@@ -210,52 +181,81 @@ public class SocketClient extends Thread {
         }
     }
 
+    /*
+     *  Process server map and connect to all servers with lower number in hostname
+     */
+    private static void processServerMap(Map<String,Integer> serverMap){
 
-    // Reply message to any REQUEST received
-    public static void sendReply(String sysNum) {
-        String nodeName = "node" + sysNum;
-        Integer port = serverMap.get(nodeName);
-              
-        try {
-            Socket soClient = new Socket(nodeName, port);
+
+       
+        
+        Map<String,Integer> filteredMap =  new HashMap<>();
+
+
+        for(String server : serverMap.keySet()){
+               
             
-            OutputStream opS = soClient.getOutputStream();
-            ObjectOutputStream oOS = new ObjectOutputStream(opS);
+             if (!server.equals(hostname)) {
 
-            Message m = new Message(new Date().getTime(), machId, "Reply");
+                // Connect to all servers with lower number in hostname
+                int id = Integer.parseInt(server.substring(4)); 
+                    
+                if (id < Integer.parseInt(machId)) {                    
+                
+                    filteredMap.put(server, serverMap.get(server));                  
+                }              
+                  
+             }
+        }
 
-            oOS.writeObject(m);
-            oOS.flush();
-            soClient.close();
 
-        } catch (IOException e) {
+        SocketServer.maxConn = filteredMap.size();
+
+
+        for(String server : filteredMap.keySet()){
+
+            // Add port nos and machine ids map
+            int port = filteredMap.get(server);
+            connectToServer(server, port);  
+        }
+
+
+               
+    }
+
+    /**
+     *  Read file and populate server map
+     * @param pathName
+     */
+    public static void readFileAndPopulateServerMap(String pathName) {
+
+        System.out.println("Reading file : " + pathName); 
+
+        String line = null;
+      
+        try {
+            FileReader fR = new FileReader(pathName);           
+            BufferedReader bufferedReader = new BufferedReader(fR);
+
+            while ((line = bufferedReader.readLine()) != null) {
+                                           
+                String[] serverInfo = line.split("-");                
+                
+                serverMap.put(serverInfo[0], Integer.parseInt(serverInfo[1]));
+                
+            }
+            
+            // Set number of systems for SocketServer
+            SocketServer.numberOfSystems = serverMap.size();
+            
+            // Close the file
+            bufferedReader.close();
+
+            System.out.println("Server map : " + serverMap);
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-
-
-
-    public static void sendRequest(String sysNum) {
-       
-        String server = "node" + sysNum;
-        Integer port = serverMap.get(server);
-       
-        try {
-            Socket soClient = new Socket(server, port);
-            // DataStreams
-            OutputStream opS = soClient.getOutputStream();
-            ObjectOutputStream oOS = new ObjectOutputStream(opS);
-          
-            Message m2 = new Message(requestTimeStamp, machId, "Request");
-            
-            oOS.writeObject(m2);
-            oOS.flush();
-            soClient.close();
-        } catch (IOException e) {
-
-            System.out.println("Failed to connect to server : " + server);
-            e.printStackTrace();
-        }
-    }
 }
