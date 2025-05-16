@@ -7,7 +7,7 @@ import java.io.IOException;
 // Start independent socket server and client
 public class App {
 
-    static int expectedMaxConnections = 0;
+   /* static int expectedMaxConnections = 0;
 
     public static void main(String[] args) {
         
@@ -74,6 +74,6 @@ public class App {
         System.out.println("Max connections " + expectedMaxConnections);    
     
         return serverPort;
-    }
+    }*/
 
 }

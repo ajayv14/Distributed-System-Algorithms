@@ -3,13 +3,13 @@ import java.io.*;
 public class Message implements Serializable {
 
     private long timeStamp;
-    private String fromServer;
+    private String senderMachineId;
     private String messageString;
 
-    public Message(long tStamp, String frmServer, String msgString) {
+    public Message(long tStamp, String senderMachineId, String msgString) {
 
         timeStamp = tStamp;
-        fromServer = frmServer;
+        this.senderMachineId = senderMachineId;
         messageString = msgString;
 
     }
@@ -23,14 +23,14 @@ public class Message implements Serializable {
         return timeStamp;
     }
 
-    public String getFromServer(){
-        return fromServer;
+    public String getSenderMachineId(){
+        return senderMachineId;
     }
 
     @Override
     public String toString() {
 
-        return "Message [timeStamp=" + timeStamp + ", fromServer=" + fromServer + ", message=" + messageString + "]";
+        return "Message [timeStamp=" + timeStamp + ", SenderId=" + senderMachineId + ", message=" + messageString + "]";
     }
 
 
