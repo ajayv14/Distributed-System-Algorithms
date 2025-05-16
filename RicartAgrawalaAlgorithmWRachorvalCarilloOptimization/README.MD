@@ -47,7 +47,10 @@ javac *.java
 
 Run the commands below each in a different terminal window :
 
-java Sockerver node01 
+java Sockerver node01
+
 java Sockerver node02 
+
 java Sockerver node03 
+
 java Sockerver node04 
