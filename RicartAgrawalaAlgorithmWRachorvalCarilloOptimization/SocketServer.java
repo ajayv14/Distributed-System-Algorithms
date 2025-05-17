@@ -11,10 +11,8 @@ public class SocketServer {
     public  Queue<Message> requestQueue = new LinkedList<>();
 
     private Set<String> repliesReceived = new HashSet<>();
-    
-    private  Map<String, Integer> serverMap = new HashMap<>();
 
-    private  Map<String, Integer> otherServersMap = new HashMap<>();
+    private  Map<String, Integer> serversMap = new HashMap<>();
 
     private Map<String, Socket> connections = new HashMap<>();
     
@@ -43,7 +41,7 @@ public class SocketServer {
         
         System.out.println("node : " + node);
        
-        serverSocket = new ServerSocket(serverMap.get(node));
+        serverSocket = new ServerSocket(serversMap.get(node));
         serverSocket.setSoTimeout(5000);  // Reduced timeout for more responsive checking
      
         // Start listener in a controlled thread
@@ -51,7 +49,7 @@ public class SocketServer {
         listenerThread.setName("SocketServer-Listener");
         listenerThread.start();
 
-        connectToOtherServers(serverMap); // Connect to nodes with lower id than the current node
+        connectToOtherServers(serversMap); 
     }
 
 
@@ -165,7 +163,7 @@ public class SocketServer {
         wantingCS = true; 
   
         // Send requests to others 
-        for (String server : otherServersMap.keySet()) {
+        for (String server : serversMap.keySet()) {
             sendRequest(server);
         }
 
@@ -174,9 +172,9 @@ public class SocketServer {
        
         synchronized (stateLock) {
 
-            while(repliesReceived.size() < otherServersMap.size()){
+            while(repliesReceived.size() < serversMap.size() - 1){
 
-                System.out.println(String.format("Waiting for %s more REPLY events", otherServersMap.size() - repliesReceived.size()));
+                System.out.println(String.format("Waiting for %s more REPLY events", serversMap.size() - repliesReceived.size()));
 
                 stateLock.wait();       
             }
@@ -288,16 +286,7 @@ public class SocketServer {
 
     private void connectToOtherServers(Map<String,Integer> serverMap){             
         
-
-        for(String server : serverMap.keySet()){
-           
-             if (!server.equals(node)) {
-            
-                otherServersMap.put(server, serverMap.get(server));               
-                
-             }
-        }
-
+        
         // Initial delay to allow for other nodes to start    
         try {
             Thread.sleep(20000); //20 secs
@@ -305,26 +294,27 @@ public class SocketServer {
             Thread.currentThread().interrupt();
         }
 
+        for(String server : serversMap.keySet()){
+           
+             if (!server.equals(node)) {
+                
+                // Add port nos and machine ids map
+                int port = serversMap.get(server);
 
-        for(String server : otherServersMap.keySet()){
-
-            // Add port nos and machine ids map
-            int port = otherServersMap.get(server);
-
-            System.out.println(String.format("Connecting to server %s at port %s", server, port));
+                System.out.println(String.format("Connecting to server %s at port %s", server, port));
             
-            try{
+                try{
+                    
+                    Socket client = new Socket("localhost", port);
+                    connections.put(server,client); // add all bi-directional connections                    
+                    
+                } catch (IOException e) {
+                    System.out.println(String.format("Failed to connect to server : %s and port %s ",server,port));
+                    e.printStackTrace();
+                }                               
                 
-                Socket client = new Socket("localhost", port);
-                connections.put(server,client); // add all bi-directional connections                    
-                
-            } catch (IOException e) {
-                System.out.println(String.format("Failed to connect to server : %s and port %s ",server,port));
-                e.printStackTrace();
-            }          
-        }
-
-        System.out.println("Other servers map : " + otherServersMap);
+             }
+        }        
                
     }
 
@@ -343,11 +333,11 @@ public class SocketServer {
                                            
                 String[] serverInfo = line.split("-");                
                 
-                serverMap.put(serverInfo[0], Integer.parseInt(serverInfo[1]));
+                serversMap.put(serverInfo[0], Integer.parseInt(serverInfo[1]));
                 
             }            
            
-            System.out.println("Server map : " + serverMap);
+            System.out.println("Servers map : " + serversMap);
 
         } catch (Exception e) {
             e.printStackTrace();
