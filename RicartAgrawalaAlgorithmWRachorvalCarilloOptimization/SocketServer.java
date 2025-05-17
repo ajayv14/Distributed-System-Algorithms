@@ -17,6 +17,9 @@ public class SocketServer {
     private  Map<String, Integer> otherServersMap = new HashMap<>();
 
     private Map<String, Socket> connections = new HashMap<>();
+    
+    // Map to store output streams for each connection
+    private Map<String, ObjectOutputStream> outputStreams = new HashMap<>();
 
     public  volatile boolean inCriticalSection = false;
 
@@ -25,55 +28,71 @@ public class SocketServer {
     private AtomicInteger logicalClockTS = new AtomicInteger(0);
        
     private static String node;
+    
+    private volatile boolean running = true;
+    
+    private Thread listenerThread;
+
+    private final Object stateLock = new Object();
 
 
 
     public SocketServer(String server) throws IOException {
-
        
         readFileAndPopulateServerMap("nodes.txt");
         
         System.out.println("node : " + node);
        
         serverSocket = new ServerSocket(serverMap.get(node));
-        serverSocket.setSoTimeout(100000);    
+        serverSocket.setSoTimeout(5000);  // Reduced timeout for more responsive checking
      
-        // Start listener
-        new Thread(this::listener).start();
-
+        // Start listener in a controlled thread
+        listenerThread = new Thread(this::listener);
+        listenerThread.setName("SocketServer-Listener");
+        listenerThread.start();
 
         connectToOtherServers(serverMap); // Connect to nodes with lower id than the current node
-
     }
 
 
-    // thread
+    
     public void listener() {
-
-        while (true) {
-
+        
+        System.out.println("Listener thread started");
+        
+        while (running) {
+          
             try {
-
+                // Non-blocking accept with timeout
                 Socket server = serverSocket.accept();
+                            
+                // Process the connection in a separate thread to avoid blocking the listener
+                new Thread(() -> {
+                    try {
 
-                ObjectInputStream inputStream = new ObjectInputStream(server.getInputStream());
-
-                Message message = (Message) inputStream.readObject();
-
-                handleClientMessages(message);
-               
-
+                        ObjectInputStream inputStream = new ObjectInputStream(server.getInputStream());
+                        while (true) {
+                            Message message = (Message) inputStream.readObject();
+                            //System.out.println("Message received : " + message);
+                            handleClientMessages(message);
+                        }
+                    } catch (IOException | ClassNotFoundException e) {
+                        System.out.println("Error processing client connection: " + e.getMessage());
+                    }
+                }).start();
+                
+            } catch (SocketTimeoutException e) {
+                // This is expected due to the timeout, just continue the loop
+                //System.out.println("Socket accept timed out, checking if we should continue running");
             } catch (IOException e) {
-                e.printStackTrace();
-                break;
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-
+               System.out.println("error occured");
             }
         }
+        System.out.println("Listener thread exited");
     }
 
-
+  
+    
     private void handleClientMessages(Message message) {
 
         switch (message.getMessage()) {
@@ -107,7 +126,7 @@ public class SocketServer {
         int machineId = Integer.parseInt(node.substring(4));
        
        
-        synchronized (this) {
+        synchronized (stateLock) {
 
             boolean defer = inCriticalSection ||
                         (wantingCS &&
@@ -129,58 +148,58 @@ public class SocketServer {
 
         System.out.println("Received REPLY message : " + message.toString());
 
-        synchronized (this) {
+        synchronized (stateLock) {
             repliesReceived.add(message.getSenderMachineId());
-            notifyAll(); //
+            stateLock.notifyAll(); //
         }    
     }
 
     
 
-    private synchronized void requestCS() throws InterruptedException{
+    private  void requestCS() throws InterruptedException{
 
+     repliesReceived.clear(); // clear prior replies
+
+     synchronized (this) { 
+        
         wantingCS = true; 
-
-        repliesReceived.clear(); // clear prior replies
-
+  
         // Send requests to others 
         for (String server : otherServersMap.keySet()) {
             sendRequest(server);
         }
 
-
+    }  
         // Wait untill all replies are received
-        synchronized (this) {
+       
+        synchronized (stateLock) {
+
             while(repliesReceived.size() < otherServersMap.size()){
 
                 System.out.println(String.format("Waiting for %s more REPLY events", otherServersMap.size() - repliesReceived.size()));
 
-                wait();       
+                stateLock.wait();       
             }
-        }  
-        
+        }
+
+
         criticalSection();
 
-        wantingCS = false;
-
-      
+        synchronized (this) { 
+            wantingCS = false;
+        }    
+        
+        
+        
         System.out.println("Number of deferred msgs : " + requestQueue.size());
 
         // Send deferred replies
         while (!requestQueue.isEmpty()) {
 
             Message deferredMessage = requestQueue.poll();
+
             sendReply(deferredMessage.getSenderMachineId());
         }
-        
-        
-        // Introduce a delay before the next request
-        try {
-            Thread.sleep(new Random().nextInt(4000) + 10000); // Wait 10 to 14 seconds
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
     }
 
     // Simulated critical section
@@ -201,35 +220,49 @@ public class SocketServer {
     }
 
   
-
-
+    
+    
     private void sendEventToServer(String server, Message m){
+
+         /*try {
+            Thread.sleep(1000);
+         } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+         }*/
        
         Socket client = connections.get(server);
 
         if(client != null){
-
-            ObjectOutputStream outToServer;
-            
+           
             try {
-                outToServer = new ObjectOutputStream(client.getOutputStream());
+                // Get or create the output stream for this connection
+                ObjectOutputStream outToServer = outputStreams.get(server);
+           
+                if (outToServer == null) {
+                    outToServer = new ObjectOutputStream(client.getOutputStream());
+                    outputStreams.put(server, outToServer);
+                }
+                
+                // Reset the stream before writing to avoid header issues
+                outToServer.reset();
                 outToServer.writeObject(m);
+                outToServer.flush();
+                            
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                System.out.println("Failed to send message to server " + server);
+                e.printStackTrace();               
             }         
+        } else {
+            System.out.println(String.format("Connections to server : %s returned null", server));
         }
-
-        else System.out.println(String.format("Connections to server : %s, failed", server));
-        
     }
   
 
    
-
+    // Request to enter CS
     public void sendRequest(String server) {
-       
-        
+               
         System.out.println("Sending REQUEST to : " + server);              
                 
         Message m = new Message(logicalClockTS.get(), node, "REQUEST");   
@@ -250,9 +283,9 @@ public class SocketServer {
     }
 
 
-    /*
-     *  Process server map and connect to all servers with lower number in hostname
-     */
+    
+
+
     private void connectToOtherServers(Map<String,Integer> serverMap){             
         
 
@@ -260,11 +293,12 @@ public class SocketServer {
            
              if (!server.equals(node)) {
             
-                otherServersMap.put(server, serverMap.get(server));                              
+                otherServersMap.put(server, serverMap.get(server));               
                 
              }
         }
 
+        // Initial delay to allow for other nodes to start    
         try {
             Thread.sleep(20000); //20 secs
         } catch (InterruptedException e) {
@@ -324,7 +358,6 @@ public class SocketServer {
    
     public static void main(String[] args) throws IOException, InterruptedException {
         
-        
         if (args.length > 0) {
             node = args[0]; // Get node ID from command line
             System.out.println("hostname : " + node);
@@ -337,11 +370,20 @@ public class SocketServer {
         SocketServer server = new SocketServer(node);
         
         // Simulate servers periodically trying to enter the critical section
-        Random random = new Random();
-        while (true) {
-            Thread.sleep(random.nextInt(5000) + 10000); // Wait between 10 to 15 seconds
-            server.requestCS();
-        }        
-    }
+        try {
+            
+            while (true) {                
+                Thread.sleep(15000);
+                System.out.println("Requesting critical section");
+                server.requestCS();
+            }
+
+        } catch (InterruptedException e) {
+            
+            System.out.println("Main thread interrupted");
+        } 
+    }    
+             
+    
 
 }
