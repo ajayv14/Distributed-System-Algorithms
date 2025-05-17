@@ -16,6 +16,8 @@ public class SocketServer {
 
     private  Map<String, Integer> otherServersMap = new HashMap<>();
 
+    private Map<String, Socket> connections = new HashMap<>();
+
     public  volatile boolean inCriticalSection = false;
 
     public  volatile boolean wantingCS = false;
@@ -93,7 +95,6 @@ public class SocketServer {
     private void handleRequestMesssage(Message message) {
 
         System.out.println("Received REQUEST message : " + message.toString());
-
        
         long senderTS = message.getTimeStamp(); // Timestamp from the message received
        
@@ -108,19 +109,16 @@ public class SocketServer {
        
         synchronized (this) {
 
-            if(!wantingCS
-                    || (!inCriticalSection
-                            && (senderTS < currentTS
-                                    || (senderTS == currentTS && senderMachineId < machineId)))){
+            boolean defer = inCriticalSection ||
+                        (wantingCS &&
+                         ((senderTS > currentTS) ||
+                         (senderTS == currentTS && senderMachineId > machineId)));
 
-                                        sendReply(message.getSenderMachineId()); // Provide ack to sender approving access to CS
-
-                                    }
-
-           else {
-
+            if (defer) {
                 System.out.println("REQUEST added to queue");
                 requestQueue.add(message);
+            } else {
+                sendReply(message.getSenderMachineId());
             }
         }      
 
@@ -166,6 +164,8 @@ public class SocketServer {
         wantingCS = false;
 
       
+        System.out.println("Number of deferred msgs : " + requestQueue.size());
+
         // Send deferred replies
         while (!requestQueue.isEmpty()) {
 
@@ -184,7 +184,7 @@ public class SocketServer {
     }
 
     // Simulated critical section
-    private synchronized void criticalSection() {
+    private void criticalSection() {
 
         System.out.println(String.format("Node %s : Entering Critical Section", node));
 
@@ -203,50 +203,50 @@ public class SocketServer {
   
 
 
-    private void sendEventToServer(String server, int port, Message m){
+    private void sendEventToServer(String server, Message m){
+       
+        Socket client = connections.get(server);
 
-       // System.out.println(String.format("Sending event to server %s , port %s, message %s ", server, port, m));
+        if(client != null){
 
-        try(Socket client = new Socket("localhost", port);
+            ObjectOutputStream outToServer;
             
-            ObjectOutputStream outToServer = new ObjectOutputStream(client.getOutputStream());){                        
-
-            outToServer.writeObject(m);        
-            
-        } catch (IOException e) {
-            System.out.println(String.format("Failed to connect to server : %s and port %s ",server,port));
-            e.printStackTrace();
+            try {
+                outToServer = new ObjectOutputStream(client.getOutputStream());
+                outToServer.writeObject(m);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }         
         }
-    }
 
+        else System.out.println(String.format("Connections to server : %s, failed", server));
+        
+    }
   
 
-
-    
+   
 
     public void sendRequest(String server) {
        
         
-        System.out.println("Sending REQUEST to : " + server);
-        
-        Integer port = serverMap.get(server);
+        System.out.println("Sending REQUEST to : " + server);              
                 
         Message m = new Message(logicalClockTS.get(), node, "REQUEST");   
 
-        sendEventToServer("localhost", port, m);
-    }
+        sendEventToServer(server, m);
+    }  
 
 
 
-     // Reply message to any REQUEST received
+    // Reply to any REQUEST received
     public void sendReply(String server) {
 
-        System.out.println("Sending REPLY to : " + server);
-             
-        Integer port = serverMap.get(server);      
+        System.out.println("Sending REPLY to : " + server);             
+          
         Message m = new Message(logicalClockTS.get(), node, "REPLY");  
 
-        sendEventToServer("localhost", port, m);        
+        sendEventToServer(server, m);        
     }
 
 
@@ -259,12 +259,7 @@ public class SocketServer {
         for(String server : serverMap.keySet()){
            
              if (!server.equals(node)) {
-
-                // Connect to all servers with lower number in hostname
-                int id = Integer.parseInt(server.substring(4));                                 
-
-                int machineId = Integer.parseInt(node.substring(4));
-
+            
                 otherServersMap.put(server, serverMap.get(server));                              
                 
              }
@@ -283,7 +278,16 @@ public class SocketServer {
             int port = otherServersMap.get(server);
 
             System.out.println(String.format("Connecting to server %s at port %s", server, port));
-             sendRequest(server); // Connect and send REQUEST  
+            
+            try{
+                
+                Socket client = new Socket("localhost", port);
+                connections.put(server,client); // add all bi-directional connections                    
+                
+            } catch (IOException e) {
+                System.out.println(String.format("Failed to connect to server : %s and port %s ",server,port));
+                e.printStackTrace();
+            }          
         }
 
         System.out.println("Other servers map : " + otherServersMap);
